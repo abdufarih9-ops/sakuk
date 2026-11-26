@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sakuku Web - Asisten Keuangan Rumah</title>
+  <!-- Library SheetJS untuk Export Excel (.xlsx) asli -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background-color: var(--surface);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #000;
+    }
+
+    .brand h1 {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .brand span {
+      font-size: 11px;
+      color: var(--primary);
+      display: block;
+    }
+
+    .btn-icon {
+      background: var(--surface-light);
+      border: none;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Main Content Container */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 75px;
+    }
+
+    .tab-content {
+      display: none;
+      height: 100%;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TAB 1: CHAT BOT & SCANNER */
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.45;
+      word-wrap: break-word;
+    }
+
+    .msg.bot {
+      background-color: var(--surface);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .msg.user {
+      background-color: var(--primary-dark);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .tx-card {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 6px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .tx-card.income {
+      border-left-color: #38bdf8;
+    }
+
+    .quick-prompts {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      overflow-x: auto;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .quick-prompts button {
+      background: var(--surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chat-input-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .chat-input-area input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-light);
+      color: var(--text);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .btn-send {
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
+    }
+
+    /* TAB 2: LAPORAN & DASHBOARD */
+    .report-container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-bar input[type="month"] {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .btn-excel {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--surface);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .card.full {
+      grid-column: span 2;
+    }
+
+    .card-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .card-val {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .val-in { color: #38bdf8; }
+    .val-out { color: var(--danger); }
+    .val-bal { color: var(--primary); }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    /* Bar Chart Sederhana */
+    .cat-row {
+      margin-bottom: 10px;
+    }
+
+    .cat-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .progress-bg {
+      background: var(--bg);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      background: var(--primary);
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    /* Tabel / Daftar Transaksi */
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tx-item {
+      background: var(--surface);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tx-item-left h4 {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .tx-item-left small {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tx-item-right {
+      text-align: right;
+    }
+
+    .tx-amount {
+      font-weight: 700;
+      font-size: 14px;
+      display: block;
+    }
+
+    .btn-del {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 11px;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    /* Bottom Navigation */
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 20;
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      justify-content: center;
+    }
+
+    nav button.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Modal Pengaturan API Key & Input Manual */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      width: 100%;
+      max-width: 400px;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .modal-box h3 {
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div>
+        <h1>Sakuku Rumah</h1>
+        <span id="ai-status">● Mode Offline (Siap)</span>
+      </div>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button class="btn-icon" onclick="openManualModal()">+ Manual</button>
+      <button class="btn-icon" onclick="openSettings()">⚙️ API</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- TAB 1: ASISTEN CHAT & FOTO STRUK -->
+    <section id="tab-chat" class="tab-content active">
+      <div class="chat-messages" id="chat-box">
+        <div class="msg bot">
+          Halo! Saya asisten keuangan rumahmu.<br><br>
+          <b>Cara pakai cepat:</b><br>
+          • Ketik pengeluaran: <i>"mie ayam 15rb"</i> atau <i>"token listrik 50000"</i><br>
+          • Ketik pemasukan: <i>"gaji 3jt"</i><br>
+          • Klik ikon 📷 untuk <b>foto struk belanja</b> otomatis<br>
+          • Tanya laporan: <i>"hari ini habis berapa?"</i> atau <i>"rekap bulan ini"</i>
+        </div>
+      </div>
+
+      <div class="quick-prompts">
+        <button onclick="sendQuick('Hari ini habis berapa?')">📊 Hari ini habis berapa?</button>
+        <button onclick="sendQuick('Rekap pengeluaran bulan ini')">📅 Rekap bulan ini</button>
+        <button onclick="sendQuick('3 pengeluaran terbesar bulan ini')">🔥 Pengeluaran terbesar</button>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="file" id="receipt-input" accept="image/*" capture="environment" style="display:none" onchange="handleReceiptUpload(event)">
+        <button class="btn-circle" onclick="document.getElementById('receipt-input').click()" title="Foto Struk">📷</button>
+        <input type="text" id="chat-input" placeholder="Ketik 'seblak 15rb' atau tanya..." onkeypress="if(event.key==='Enter') handleUserMessage()">
+        <button class="btn-circle btn-send" onclick="handleUserMessage()">➤</button>
+      </div>
+    </section>
+
+    <!-- TAB 2: LAPORAN LENGKAP & EXCEL -->
+    <section id="tab-report" class="tab-content">
+      <div class="report-container">
+        <div class="filter-bar">
+          <input type="month" id="filter-month" onchange="renderReport()">
+          <button class="btn-excel" onclick="exportToExcel()">📥 Export Excel</button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="card">
+            <div class="card-label">Pemasukan</div>
+            <div class="card-val val-in" id="rep-in">Rp 0</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Pengeluaran</div>
+            <div class="card-val val-out" id="rep-out">Rp 0</div>
+          </div>
+          <div class="card full">
+            <div class="card-label">Sisa Saldo Bulan Ini</div>
+            <div class="card-val val-bal" id="rep-bal">Rp 0</div>
+          </div>
+        </div>
+
+        <!-- Rekap Otomatis Akhir Bulan & 3 Pengeluaran Terbesar -->
+        <div class="card" id="monthly-insight-card">
+          <div class="section-title">📋 Ringkasan & 3 Pengeluaran Terbesar</div>
+          <div id="top-expenses" style="font-size: 13px; line-height: 1.6; color: var(--text-muted);">
+            Belum ada data pengeluaran bulan ini.
+          </div>
+        </div>
+
+        <!-- Rincian Per Kategori -->
+        <div class="card">
+          <div class="section-title">📊 Rincian per Kategori</div>
+          <div id="category-breakdown"></div>
+        </div>
+
+        <!-- Daftar Transaksi -->
+        <div>
+          <div class="section-title">🧾 Riwayat Transaksi</div>
+          <div class="tx-list" id="tx-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button id="nav-chat" class="active" onclick="switchTab('chat')">
+      <span style="font-size:18px;">💬</span>
+      <span>Asisten & Struk</span>
+    </button>
+    <button id="nav-report" onclick="switchTab('report')">
+      <span style="font-size:18px;">📑</span>
+      <span>Laporan & Excel</span>
+    </button>
+  </nav>
+
+  <!-- MODAL API KEY GEMINI -->
+  <div class="modal" id="modal-settings">
+    <div class="modal-box">
+      <h3>⚙️ Pengaturan AI (Gemini API)</h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+        Masukkan Gemini API Key gratis dari <b>aistudio.google.com</b> agar bot bisa membaca <b>foto struk</b> dan menjawab pertanyaan cerdas. Tanpa API key, input teks cepat tetap berjalan offline.
+      </p>
+      <div class="form-group">
+        <label>Gemini API Key</label>
+        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-icon" onclick="closeModal('modal-settings')">Batal</button>
+        <button class="btn-primary" onclick="saveApiKey()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL INPUT MANUAL -->
+  <div class="modal" id="modal-manual">
+    <div class="modal-box">
+      <h3>➕ Tambah Transaksi Manual</h3>
+      <div class="form-group">
+        <label>Tipe</label>
+        <select id="man-type">
+          <option value="Pengeluaran">Pengeluaran</option>
+          <option value="Pemasukan">Pemasukan</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Deskripsi / Nama Item</label>
+        <input type="text" id="man-desc" placeholder="Contoh: Belanja sayur">
+      </div>
+      <div class="form-group">
+        <label>Nominal (Rp)</label>
+        <input type="number" id="man-amount" placeholder="25000">
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="man-cat">
+          <option value="Makanan">Makanan</option>
+          <option value="Belanja">Belanja</option>
+          <option value="Tagihan">Tagihan</option>
+          <option value="Transport">Transport</option>
+          <option value="Kesehatan">Kesehatan</option>
+          <option value="Gaji/Bonus">Gaji/Bonus</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="man-date">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-icon" onclick="closeModal('modal-manual')">Batal</button>
+        <button class="btn-primary" onclick="saveManualTx()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. DATABASE INDEXEDDB (Penyimpanan Lokal)
+    // ==========================================
+    let db;
+    const DB_NAME = 'SakukuRumahDB';
+    const STORE_NAME = 'transactions';
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+          db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            store.createIndex('date', 'date', { unique: false });
+          }
+        };
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    }
+
+    function addTransaction(tx) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const req = store.add(tx);
+        req.onsuccess = () => resolve(tx);
+        req.onerror = (e) => reject(e);
+      });
+    }
+
+    function getAllTransactions() {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => {
+          // Urutkan terbaru di atas
+          const sorted = req.result.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          resolve(sorted);
+        };
+        req.onerror = (e) => reject(e);
+      });
+    }
+
+    function deleteTransaction(id) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = (e) => reject(e);
+      });
+    }
+
+    // ==========================================
+    // 2. INISIALISASI & NAVIGASI
+    // ==========================================
+    window.onload = async () => {
+      await initDB();
+      
+      // Set default filter bulan ke bulan berjalan (YYYY-MM)
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      
+      document.getElementById('filter-month').value = `${yyyy}-${mm}`;
+      document.getElementById('man-date').value = `${yyyy}-${mm}-${dd}`;
+
+      updateApiStatus();
+      checkEndOfMonthNotification();
+    };
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.getElementById(`nav-${tab}`).classList.add('active');
+
+      if (tab === 'report') renderReport();
+    }
+
+    function openSettings() {
+      document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
+      document.getElementById('modal-settings').classList.add('open');
+    }
+
+    function openManualModal() {
+      document.getElementById('modal-manual').classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('api-key-input').value.trim();
+      localStorage.setItem('gemini_api_key', key);
+      updateApiStatus();
+      closeModal('modal-settings');
+      appendBotMessage(key ? '✅ API Key tersimpan! Fitur Scan Foto Struk & AI Cerdas aktif.' : 'ℹ️ API Key dihapus. Beralih ke mode offline.');
+    }
+
+    function updateApiStatus() {
+      const key = localStorage.getItem('gemini_api_key');
+      const statusEl = document.getElementById('ai-status');
+      if (key) {
+        statusEl.textContent = '● AI Gemini Aktif (Online)';
+        statusEl.style.color = '#10b981';
+      } else {
+        statusEl.textContent = '● Mode Offline (Teks Lokal)';
+        statusEl.style.color = '#f59e0b';
+      }
+    }
+
+    // ==========================================
+    // 3. PARSER & AI GEMINI (CHAT + SCAN STRUK)
+    // ==========================================
+    function formatRupiah(num) {
+      return 'Rp ' + Number(num).toLocaleString('id-ID');
+    }
+
+    function appendUserMessage(text, imgUrl = null) {
+      const box = document.getElementById('chat-box');
+      const div = document.createElement('div');
+      div.className = 'msg user';
+      let content = '';
+      if (imgUrl) content += `<img src="${imgUrl}" alt="Struk">`;
+      if (text) content += `<div>${text}</div>`;
+      div.innerHTML = content;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function appendBotMessage(htmlContent) {
+      const box = document.getElementById('chat-box');
+      const div = document.createElement('div');
+      div.className = 'msg bot';
+      div.innerHTML = htmlContent;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    function sendQuick(text) {
+      document.getElementById('chat-input').value = text;
+      handleUserMessage();
+    }
+
+    // Parser Offline (Regex cerdas untuk "mie ayam 15rb", "gaji 3jt", dll)
+    function parseOfflineText(text) {
+      const lower = text.toLowerCase();
+      // Cek apakah pertanyaan laporan
+      if (lower.includes('berapa') || lower.includes('rekap') || lower.includes('laporan') || lower.includes('terbesar')) {
+        return { intent: 'query', queryType: lower };
+      }
+
+      // Cari angka nominal (mendukung rb, ribu, k, jt, juta, titik/koma)
+      const match = lower.match(/(\d+(?:[.,]\d+)?)\s*(rb|ribu|k|jt|juta)?\b/);
+      if (!match) return { intent: 'unknown' };
+
+      let num = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+      const unit = match[2];
+      if (unit === 'rb' || unit === 'ribu' || unit === 'k') num *= 1000;
+      if (unit === 'jt' || unit === 'juta') num *= 1000000;
+
+      // Bersihkan deskripsi
+      let desc = text.replace(match[0], '').trim();
+      if (!desc) desc = 'Transaksi';
+      desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+      // Tentukan tipe (Pemasukan vs Pengeluaran)
+      const isIncome = /(gaji|bonus|dapat|terima|pemasukan|transfer masuk|untung)/i.test(lower);
+      const type = isIncome ? 'Pemasukan' : 'Pengeluaran';
+
+      // Tebak kategori otomatis
+      let category = 'Lainnya';
+      if (isIncome) category = 'Gaji/Bonus';
+      else if (/(makan|minum|ayam|seblak|kopi|nasi|bakso|soto|jajan|roti|air|galon)/i.test(lower)) category = 'Makanan';
+      else if (/(belanja|mart|indomaret|alfamart|sayur|beras|minyak|sabun|dapur)/i.test(lower)) category = 'Belanja';
+      else if (/(listrik|token|pdam|wifi|pulsa|kuota|internet|cicilan|kos)/i.test(lower)) category = 'Tagihan';
+      else if (/(bensin|pertalite|pertamax|solar|parkir|ojek|gojek|grab|servis|oli)/i.test(lower)) category = 'Transport';
+      else if (/(obat|dokter|apotek|vitamin|sakit)/i.test(lower)) category = 'Kesehatan';
+
+      return { intent: 'record', type, description: desc, amount: Math.round(num), category };
+    }
+
+    async function handleUserMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      appendUserMessage(text);
+
+      const apiKey = localStorage.getItem('gemini_api_key');
+      const allTx = await getAllTransactions();
+
+      // Jika ada Gemini API Key, gunakan AI untuk pemahaman bahasa alami & tanya jawab
+      if (apiKey) {
+        const loadingMsg = appendBotMessage('⏳ <i>Sedang memproses...</i>');
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const recentTxSummary = allTx.slice(0, 60).map(t => `${t.date} | ${t.type} | ${t.category} | ${t.description}: Rp${t.amount}`).join('\n');
+
+          const prompt = `Kamu adalah asisten keuangan pribadi bernama Sakuku. Hari ini tanggal ${todayStr}.
+Analisis pesan pengguna: "${text}"
+
+Jika pengguna ingin MENCATAT transaksi baru, balas HANYA dengan JSON murni tanpa markdown:
+{"intent":"record","type":"Pengeluaran" atau "Pemasukan","description":"nama item singkat","amount":angka_integer,"category":"Makanan/Belanja/Tagihan/Transport/Kesehatan/Gaji/Bonus/Lainnya"}
+
+Jika pengguna BERTANYA tentang laporan/pengeluaran/sisa uang berdasarkan data berikut:
+${recentTxSummary || 'Belum ada data transaksi.'}
+Balas dengan JSON murni:
+{"intent":"answer","reply":"jawaban ramah, ringkas, dan jelas dengan rincian angka Rupiah"}`;
+
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          const data = await res.json();
+          const rawText = data.candidates[0].content.parts[0].text;
+          const parsed = JSON.parse(rawText);
+          loadingMsg.remove();
+
+          if (parsed.intent === 'record') {
+            await saveAndConfirmTx(parsed);
+          } else {
+            appendBotMessage(parsed.reply.replace(/\n/g, '<br>'));
+          }
+          return;
+        } catch (err) {
+          loadingMsg.remove();
+          console.error(err);
+          // Fallback ke mode offline jika API error
+        }
+      }
+
+      // Mode Offline / Fallback
+      const parsed = parseOfflineText(text);
+      if (parsed.intent === 'record') {
+        await saveAndConfirmTx(parsed);
+      } else if (parsed.intent === 'query') {
+        await answerOfflineQuery(parsed.queryType, allTx);
+      } else {
+        appendBotMessage('Maaf, format tidak dikenali. Contoh ketik: <b>"mie ayam 15rb"</b> atau <b>"beli gas 20000"</b>.');
+      }
+    }
+
+    // ==========================================
+    // 4. SCAN FOTO STRUK OTOMATIS (GEMINI VISION)
+    // ==========================================
+    async function handleReceiptUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        alert('Untuk membaca foto struk secara otomatis, silakan masukkan Gemini API Key terlebih dahulu di tombol ⚙️ API di pojok kanan atas.');
+        openSettings();
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const dataUrl = e.target.result;
+        const base64Data = dataUrl.split(',')[1];
+        appendUserMessage('📸 Mengirim foto struk...', dataUrl);
+        const loadingMsg = appendBotMessage('🔍 <i>AI sedang membaca total belanja di struk...</i>');
+
+        try {
+          const prompt = `Baca foto struk belanja ini. Ekstrak nama toko/keterangan utama dan TOTAL akhir pembayaran.
+Balas HANYA dengan JSON murni:
+{"type":"Pengeluaran","description":"Belanja [Nama Toko]","amount":angka_total_integer,"category":"Belanja atau Makanan"}`;
+
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt },
+                  { inline_data: { mime_type: file.type, data: base64Data } }
+                ]
+              }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          const data = await res.json();
+          const rawText = data.candidates[0].content.parts[0].text;
+          const parsed = JSON.parse(rawText);
+          loadingMsg.remove();
+
+          if (parsed && parsed.amount) {
+            await saveAndConfirmTx(parsed);
+          } else {
+            appendBotMessage('❌ Gagal membaca total nominal pada struk. Coba foto ulang dengan cahaya lebih terang.');
+          }
+        } catch (err) {
+          loadingMsg.remove();
+          appendBotMessage('❌ Terjadi kesalahan saat memproses foto struk. Pastikan koneksi internet lancar dan API Key valid.');
+        }
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveAndConfirmTx(data) {
+      const now = new Date();
+      const dateStr = data.date || now.toISOString().split('T')[0];
+      const tx = {
+        id: 'TXN-' + Date.now(),
+        timestamp: now.toISOString(),
+        date: dateStr,
+        time: now.toTimeString().split(' ')[0],
+        type: data.type || 'Pengeluaran',
+        description: data.description,
+        amount: Number(data.amount),
+        category: data.category || 'Lainnya'
+      };
+
+      await addTransaction(tx);
+
+      const isIncome = tx.type === 'Pemasukan';
+      const cardHtml = `
+        ✅ <b>Transaksi Tersimpan!</b>
+        <div class="tx-card ${isIncome ? 'income' : ''}">
+          <b>${tx.description}</b><br>
+          💰 ${formatRupiah(tx.amount)} • 🏷️ ${tx.category}<br>
+          📋 Tipe: ${tx.type}<br>
+          <small style="color:var(--text-muted)">🔑 ID: ${tx.id}</small>
+        </div>
+      `;
+      appendBotMessage(cardHtml);
+    }
+
+    async function answerOfflineQuery(query, allTx) {
+      const today = new Date().toISOString().split('T')[0];
+      const currentMonth = today.slice(0, 7);
+
+      if (query.includes('hari ini')) {
+        const todayTx = allTx.filter(t => t.date === today && t.type === 'Pengeluaran');
+        const total = todayTx.reduce((sum, t) => sum + t.amount, 0);
+        if (todayTx.length === 0) {
+          appendBotMessage('📅 Hari ini belum ada catatan pengeluaran.');
+          return;
+        }
+        const list = todayTx.map(t => `• ${t.description}: ${formatRupiah(t.amount)}`).join('<br>');
+        appendBotMessage(`📅 <b>Pengeluaran Hari Ini (${today}):</b><br>Total: <b>${formatRupiah(total)}</b><br><br>Rincian:<br>${list}`);
+      } else {
+        const monthTx = allTx.filter(t => t.date.startsWith(currentMonth) && t.type === 'Pengeluaran');
+        const total = monthTx.reduce((sum, t) => sum + t.amount, 0);
+        const top3 = [...monthTx].sort((a, b) => b.amount - a.amount).slice(0, 3);
+        const topStr = top3.map((t, i) => `${i + 1}. ${t.description}: ${formatRupiah(t.amount)}`).join('<br>');
+
+        appendBotMessage(`📊 <b>Laporan Bulan Ini (${currentMonth}):</b><br>Total Pengeluaran: <b>${formatRupiah(total)}</b><br><br><b>3 Pengeluaran Terbesar:</b><br>${topStr || '-'}`);
+      }
+    }
+
+    // Input Manual Modal
+    async function saveManualTx() {
+      const type = document.getElementById('man-type').value;
+      const description = document.getElementById('man-desc').value.trim();
+      const amount = Number(document.getElementById('man-amount').value);
+      const category = document.getElementById('man-cat').value;
+      const date = document.getElementById('man-date').value;
+
+      if (!description || !amount || amount <= 0) {
+        alert('Mohon isi deskripsi dan nominal yang valid.');
+        return;
+      }
+
+      await saveAndConfirmTx({ type, description, amount, category, date });
+      document.getElementById('man-desc').value = '';
+      document.getElementById('man-amount').value = '';
+      closeModal('modal-manual');
+      renderReport();
+    }
+
+    // ==========================================
+    // 5. LAPORAN LENGKAP & EXPORT EXCEL (.XLSX)
+    // ==========================================
+    async function renderReport() {
+      const selectedMonth = document.getElementById('filter-month').value;
+      const allTx = await getAllTransactions();
+      const filtered = allTx.filter(t => t.date.startsWith(selectedMonth));
+
+      let totalIn = 0;
+      let totalOut = 0;
+      const catTotals = {};
+
+      filtered.forEach(t => {
+        if (t.type === 'Pemasukan') {
+          totalIn += t.amount;
+        } else {
+          totalOut += t.amount;
+          catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+        }
+      });
+
+      document.getElementById('rep-in').textContent = formatRupiah(totalIn);
+      document.getElementById('rep-out').textContent = formatRupiah(totalOut);
+      document.getElementById('rep-bal').textContent = formatRupiah(totalIn - totalOut);
+
+      // 3 Pengeluaran Terbesar
+      const top3 = filtered
+        .filter(t => t.type === 'Pengeluaran')
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 3);
+
+      const topEl = document.getElementById('top-expenses');
+      if (top3.length > 0) {
+        topEl.innerHTML = top3.map((t, i) => 
+          `<div>${i + 1}. <b>${t.description}</b> (${t.category}): <span style="color:var(--text)">${formatRupiah(t.amount)}</span></div>`
+        ).join('');
+      } else {
+        topEl.textContent = 'Belum ada data pengeluaran pada bulan ini.';
+      }
+
+      // Grafik Kategori
+      const catBox = document.getElementById('category-breakdown');
+      catBox.innerHTML = '';
+      const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+
+      if (sortedCats.length === 0) {
+        catBox.innerHTML = '<small style="color:var(--text-muted)">Tidak ada data kategori.</small>';
+      } else {
+        sortedCats.forEach(([cat, amt]) => {
+          const pct = totalOut > 0 ? Math.round((amt / totalOut) * 100) : 0;
+          catBox.innerHTML += `
+            <div class="cat-row">
+              <div class="cat-info">
+                <span>${cat} (${pct}%)</span>
+                <b>${formatRupiah(amt)}</b>
+              </div>
+              <div class="progress-bg">
+                <div class="progress-fill" style="width:${pct}%"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Riwayat Transaksi
+      const listEl = document.getElementById('tx-list');
+      listEl.innerHTML = '';
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<small style="color:var(--text-muted)">Belum ada transaksi di bulan ini.</small>';
+      } else {
+        filtered.forEach(t => {
+          const isIn = t.type === 'Pemasukan';
+          listEl.innerHTML += `
+            <div class="tx-item">
+              <div class="tx-item-left">
+                <h4>${t.description}</h4>
+                <small>${t.date} • ${t.category}</small>
+              </div>
+              <div class="tx-item-right">
+                <span class="tx-amount" style="color:${isIn ? '#38bdf8' : '#ef4444'}">
+                  ${isIn ? '+' : '-'} ${formatRupiah(t.amount)}
+                </span>
+                <button class="btn-del" onclick="removeTx('${t.id}')">Hapus</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    async function removeTx(id) {
+      if (confirm('Hapus transaksi ini?')) {
+        await deleteTransaction(id);
+        renderReport();
+      }
+    }
+
+    // Export Laporan Excel (.xlsx) dengan 2 Sheet (Rincian & Rekap Kategori)
+    async function exportToExcel() {
+      const selectedMonth = document.getElementById('filter-month').value;
+      const allTx = await getAllTransactions();
+      const filtered = allTx.filter(t => t.date.startsWith(selectedMonth));
+
+      if (filtered.length === 0) {
+        alert('Tidak ada data transaksi pada bulan yang dipilih untuk di-export.');
+        return;
+      }
+
+      // Sheet 1: Rincian Transaksi
+      const sheet1Data = filtered.map(t => ({
+        'ID Transaksi': t.id,
+        'Tanggal': t.date,
+        'Waktu': t.time || '-',
+        'Tipe': t.type,
+        'Kategori': t.category,
+        'Deskripsi': t.description,
+        'Nominal (Rp)': t.amount
+      }));
+
+      // Sheet 2: Rekap per Kategori
+      const catMap = {};
+      filtered.forEach(t => {
+        const key = `${t.type} - ${t.category}`;
+        catMap[key] = (catMap[key] || 0) + t.amount;
+      });
+      const sheet2Data = Object.entries(catMap).map(([k, total]) => ({
+        'Tipe & Kategori': k,
+        'Total (Rp)': total
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+      const ws2 = XLSX.utils.json_to_sheet(sheet2Data);
+
+      XLSX.utils.book_append_sheet(wb, ws1, 'Rincian Transaksi');
+      XLSX.utils.book_append_sheet(wb, ws2, 'Rekap Kategori');
+
+      XLSX.writeFile(wb, `Laporan_Keuangan_${selectedMonth}.xlsx`);
+    }
+
+    // Cek Otomatis Rekap Akhir Bulan (Tanggal 28-31)
+    async function checkEndOfMonthNotification() {
+      const now = new Date();
+      if (now.getDate() >= 28) {
+        const ym = now.toISOString().slice(0, 7);
+        const alreadyNotified = localStorage.getItem(`notified_${ym}`);
+        if (!alreadyNotified) {
+          const allTx = await getAllTransactions();
+          const monthOut = allTx
+            .filter(t => t.date.startsWith(ym) && t.type === 'Pengeluaran')
+            .reduce((s, t) => s + t.amount, 0);
+          
+          if (monthOut > 0) {
+            appendBotMessage(`🔔 <b>Laporan Otomatis Akhir Bulan (${ym}):</b><br>Total pengeluaranmu bulan ini mencapai <b>${formatRupiah(monthOut)}</b>. Cek tab <b>Laporan & Excel</b> untuk melihat rincian kategori dan mengunduh file Excel-nya!`);
+            localStorage.setItem(`notified_${ym}`, 'true');
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
