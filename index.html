@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sakuku Web - Asisten Keuangan Rumah</title>
+  <title>Sakuku Rumah - Asisten Keuangan</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#10b981">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- Library SheetJS untuk Export Excel (.xlsx) asli -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
@@ -36,7 +40,6 @@
       overflow: hidden;
     }
 
-    /* Header */
     header {
       background-color: var(--surface);
       padding: 14px 16px;
@@ -87,7 +90,6 @@
       cursor: pointer;
     }
 
-    /* Main Content Container */
     main {
       flex: 1;
       overflow-y: auto;
@@ -104,7 +106,6 @@
       flex-direction: column;
     }
 
-    /* TAB 1: CHAT BOT & SCANNER */
     .chat-messages {
       flex: 1;
       padding: 16px;
@@ -217,7 +218,6 @@
       font-weight: bold;
     }
 
-    /* TAB 2: LAPORAN & DASHBOARD */
     .report-container {
       padding: 16px;
       display: flex;
@@ -292,7 +292,6 @@
       color: var(--text);
     }
 
-    /* Bar Chart Sederhana */
     .cat-row {
       margin-bottom: 10px;
     }
@@ -317,7 +316,6 @@
       border-radius: 4px;
     }
 
-    /* Tabel / Daftar Transaksi */
     .tx-list {
       display: flex;
       flex-direction: column;
@@ -363,7 +361,6 @@
       cursor: pointer;
     }
 
-    /* Bottom Navigation */
     nav {
       position: fixed;
       bottom: 0;
@@ -398,7 +395,6 @@
       font-weight: 600;
     }
 
-    /* Modal Pengaturan API Key & Input Manual */
     .modal {
       display: none;
       position: fixed;
@@ -484,7 +480,6 @@
   </header>
 
   <main>
-    <!-- TAB 1: ASISTEN CHAT & FOTO STRUK -->
     <section id="tab-chat" class="tab-content active">
       <div class="chat-messages" id="chat-box">
         <div class="msg bot">
@@ -511,7 +506,6 @@
       </div>
     </section>
 
-    <!-- TAB 2: LAPORAN LENGKAP & EXCEL -->
     <section id="tab-report" class="tab-content">
       <div class="report-container">
         <div class="filter-bar">
@@ -534,7 +528,6 @@
           </div>
         </div>
 
-        <!-- Rekap Otomatis Akhir Bulan & 3 Pengeluaran Terbesar -->
         <div class="card" id="monthly-insight-card">
           <div class="section-title">📋 Ringkasan & 3 Pengeluaran Terbesar</div>
           <div id="top-expenses" style="font-size: 13px; line-height: 1.6; color: var(--text-muted);">
@@ -542,13 +535,11 @@
           </div>
         </div>
 
-        <!-- Rincian Per Kategori -->
         <div class="card">
           <div class="section-title">📊 Rincian per Kategori</div>
           <div id="category-breakdown"></div>
         </div>
 
-        <!-- Daftar Transaksi -->
         <div>
           <div class="section-title">🧾 Riwayat Transaksi</div>
           <div class="tx-list" id="tx-list"></div>
@@ -568,7 +559,6 @@
     </button>
   </nav>
 
-  <!-- MODAL API KEY GEMINI -->
   <div class="modal" id="modal-settings">
     <div class="modal-box">
       <h3>⚙️ Pengaturan AI (Gemini API)</h3>
@@ -586,7 +576,6 @@
     </div>
   </div>
 
-  <!-- MODAL INPUT MANUAL -->
   <div class="modal" id="modal-manual">
     <div class="modal-box">
       <h3>➕ Tambah Transaksi Manual</h3>
@@ -630,6 +619,15 @@
 
   <script>
     // ==========================================
+    // 0. REGISTRASI SERVICE WORKER (PWA)
+    // ==========================================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // ==========================================
     // 1. DATABASE INDEXEDDB (Penyimpanan Lokal)
     // ==========================================
     let db;
@@ -670,7 +668,6 @@
         const store = transaction.objectStore(STORE_NAME);
         const req = store.getAll();
         req.onsuccess = () => {
-          // Urutkan terbaru di atas
           const sorted = req.result.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
           resolve(sorted);
         };
@@ -694,7 +691,6 @@
     window.onload = async () => {
       await initDB();
       
-      // Set default filter bulan ke bulan berjalan (YYYY-MM)
       const now = new Date();
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -784,15 +780,12 @@
       handleUserMessage();
     }
 
-    // Parser Offline (Regex cerdas untuk "mie ayam 15rb", "gaji 3jt", dll)
     function parseOfflineText(text) {
       const lower = text.toLowerCase();
-      // Cek apakah pertanyaan laporan
       if (lower.includes('berapa') || lower.includes('rekap') || lower.includes('laporan') || lower.includes('terbesar')) {
         return { intent: 'query', queryType: lower };
       }
 
-      // Cari angka nominal (mendukung rb, ribu, k, jt, juta, titik/koma)
       const match = lower.match(/(\d+(?:[.,]\d+)?)\s*(rb|ribu|k|jt|juta)?\b/);
       if (!match) return { intent: 'unknown' };
 
@@ -801,16 +794,13 @@
       if (unit === 'rb' || unit === 'ribu' || unit === 'k') num *= 1000;
       if (unit === 'jt' || unit === 'juta') num *= 1000000;
 
-      // Bersihkan deskripsi
       let desc = text.replace(match[0], '').trim();
       if (!desc) desc = 'Transaksi';
       desc = desc.charAt(0).toUpperCase() + desc.slice(1);
 
-      // Tentukan tipe (Pemasukan vs Pengeluaran)
       const isIncome = /(gaji|bonus|dapat|terima|pemasukan|transfer masuk|untung)/i.test(lower);
       const type = isIncome ? 'Pemasukan' : 'Pengeluaran';
 
-      // Tebak kategori otomatis
       let category = 'Lainnya';
       if (isIncome) category = 'Gaji/Bonus';
       else if (/(makan|minum|ayam|seblak|kopi|nasi|bakso|soto|jajan|roti|air|galon)/i.test(lower)) category = 'Makanan';
@@ -833,7 +823,6 @@
       const apiKey = localStorage.getItem('gemini_api_key');
       const allTx = await getAllTransactions();
 
-      // Jika ada Gemini API Key, gunakan AI untuk pemahaman bahasa alami & tanya jawab
       if (apiKey) {
         const loadingMsg = appendBotMessage('⏳ <i>Sedang memproses...</i>');
         try {
@@ -874,11 +863,9 @@ Balas dengan JSON murni:
         } catch (err) {
           loadingMsg.remove();
           console.error(err);
-          // Fallback ke mode offline jika API error
         }
       }
 
-      // Mode Offline / Fallback
       const parsed = parseOfflineText(text);
       if (parsed.intent === 'record') {
         await saveAndConfirmTx(parsed);
@@ -1001,7 +988,6 @@ Balas HANYA dengan JSON murni:
       }
     }
 
-    // Input Manual Modal
     async function saveManualTx() {
       const type = document.getElementById('man-type').value;
       const description = document.getElementById('man-desc').value.trim();
@@ -1046,7 +1032,6 @@ Balas HANYA dengan JSON murni:
       document.getElementById('rep-out').textContent = formatRupiah(totalOut);
       document.getElementById('rep-bal').textContent = formatRupiah(totalIn - totalOut);
 
-      // 3 Pengeluaran Terbesar
       const top3 = filtered
         .filter(t => t.type === 'Pengeluaran')
         .sort((a, b) => b.amount - a.amount)
@@ -1061,7 +1046,6 @@ Balas HANYA dengan JSON murni:
         topEl.textContent = 'Belum ada data pengeluaran pada bulan ini.';
       }
 
-      // Grafik Kategori
       const catBox = document.getElementById('category-breakdown');
       catBox.innerHTML = '';
       const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
@@ -1085,7 +1069,6 @@ Balas HANYA dengan JSON murni:
         });
       }
 
-      // Riwayat Transaksi
       const listEl = document.getElementById('tx-list');
       listEl.innerHTML = '';
       if (filtered.length === 0) {
@@ -1118,7 +1101,6 @@ Balas HANYA dengan JSON murni:
       }
     }
 
-    // Export Laporan Excel (.xlsx) dengan 2 Sheet (Rincian & Rekap Kategori)
     async function exportToExcel() {
       const selectedMonth = document.getElementById('filter-month').value;
       const allTx = await getAllTransactions();
@@ -1129,7 +1111,6 @@ Balas HANYA dengan JSON murni:
         return;
       }
 
-      // Sheet 1: Rincian Transaksi
       const sheet1Data = filtered.map(t => ({
         'ID Transaksi': t.id,
         'Tanggal': t.date,
@@ -1140,7 +1121,6 @@ Balas HANYA dengan JSON murni:
         'Nominal (Rp)': t.amount
       }));
 
-      // Sheet 2: Rekap per Kategori
       const catMap = {};
       filtered.forEach(t => {
         const key = `${t.type} - ${t.category}`;
@@ -1161,7 +1141,6 @@ Balas HANYA dengan JSON murni:
       XLSX.writeFile(wb, `Laporan_Keuangan_${selectedMonth}.xlsx`);
     }
 
-    // Cek Otomatis Rekap Akhir Bulan (Tanggal 28-31)
     async function checkEndOfMonthNotification() {
       const now = new Date();
       if (now.getDate() >= 28) {
